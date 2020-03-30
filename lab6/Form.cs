@@ -32,7 +32,7 @@ namespace lab6
                 };
                 var reader = sCommand.ExecuteReader();
                 while (reader.Read())
-                    data_grid_view.Rows.Add(reader["actor_name"], reader["film_name"], reader["honorarium"]);
+                    data_grid_view.Rows.Add(reader["actor_name"], reader["film_name"], reader["honorarium"]); //fill data_grid_view
             }
             foreach (DataGridViewRow row in data_grid_view.Rows)
             {
@@ -42,7 +42,7 @@ namespace lab6
                     foreach (DataGridViewCell cell in row.Cells)
                         tag.Add(cell.Value);
                     row.Tag = tag;
-                }
+                } //assign a tag for each added row equal his values
             }
         }
 
@@ -63,7 +63,7 @@ namespace lab6
                     command.Parameters.AddWithValue("@actor_name", row.Cells["actor_name"].Value);
                     command.Parameters.AddWithValue("@film_name", row.Cells["film_name"].Value);
                     command.Parameters.AddWithValue("@honorarium", int.Parse(row.Cells["honorarium"].Value.ToString()));
-                    if (row.Tag != null)
+                    if (row.Tag != null) //if a tag of the mutable row is null, then this row is new
                     {
 
                         command.CommandText = @"UPDATE view_cinema SET actor_name = @actor_name, film_name = @film_name, honorarium = @honorarium
@@ -75,11 +75,11 @@ namespace lab6
                     {
                         command.CommandText = @"INSERT INTO view_cinema(actor_name, film_name, honorarium) VALUES (@actor_name, @film_name, @honorarium)";
                     }
-                    int check = CheckDuplicates(row.Cells["actor_name"].Value.ToString(), row.Cells["film_name"].Value.ToString(), row.Index);
-                    if (check >= 0)
+                    int check = CheckDuplicates(row.Cells["actor_name"].Value.ToString(), row.Cells["film_name"].Value.ToString(), row.Index); //if there is the row in data_grid, then the function return index second row, else return -1 
+                    if (check >= 0) //if there is duplicates
                     {
-                        data_grid_view.Rows[check].Cells["honorarium"].Value = int.Parse(data_grid_view.Rows[check].Cells["honorarium"].Value.ToString()) + int.Parse(row.Cells["honorarium"].Value.ToString());
-                        row.SetValues(string.Empty, string.Empty, string.Empty);
+                        data_grid_view.Rows[check].Cells["honorarium"].Value = int.Parse(data_grid_view.Rows[check].Cells["honorarium"].Value.ToString()) + int.Parse(row.Cells["honorarium"].Value.ToString()); //update honorarium
+                        row.SetValues(string.Empty, string.Empty, string.Empty); //erase the values
                     }
                     command.ExecuteNonQuery();
                     connect.Close();
@@ -89,17 +89,16 @@ namespace lab6
                         dataDict.Add(row.Cells[columnsName].Value);
                     }
 
-                    row.Tag = dataDict;
+                    row.Tag = dataDict; //change a tag this row 
 
-                    row.ErrorText = string.Empty;
+                    row.ErrorText = string.Empty; //clear error text
                 }
             }
         }
         private void button_delete_Click(object sender, EventArgs e)
         {
-            foreach (DataGridViewRow row in data_grid_view.SelectedRows)
+            foreach (DataGridViewRow row in data_grid_view.SelectedRows) //delete selected row
                 delete_one_row(row);
-            delete_empty_row();
         }
         private void delete_empty_row()
         {
@@ -184,20 +183,14 @@ namespace lab6
         {
             foreach (DataGridViewRow row in data_grid_view.Rows)
                 if (row.Index != index_no_check && !row.IsNewRow)
-                    if (row.Cells[0].Value.ToString() == actor_name && row.Cells[1].Value.ToString() == film_name)
+                    if (row.Cells[0].Value.ToString() == actor_name && row.Cells[1].Value.ToString() == film_name) //if rows have identical actor_name and film_name, then these rows are duplicates
                         return row.Index;
             return -1;
         }
 
-        private void data_grid_view_RowValidated(object sender, DataGridViewCellEventArgs e)
+        private void button_refresh_Click(object sender, EventArgs e) //"Refresh" delete a empty rows 
         {
-            //DataGridViewRow row_deleted = null;
-            //foreach (DataGridViewRow row in data_grid_view.Rows)
-            //    if (!row.IsNewRow)
-            //        if (row.Cells[0].Value.ToString() == string.Empty && row.Cells[1].Value.ToString() == string.Empty && row.Cells[2].Value.ToString() == string.Empty)
-            //            row_deleted = row;
-            //if (row_deleted != null)
-            //    data_grid_view.Rows.Remove(row_deleted);
+            delete_empty_row();
         }
     }
 }
