@@ -8,7 +8,7 @@ namespace lab6
 {
     public partial class FormPresentantion : Form
     {
-        private readonly string connect_string = "Host = localhost; Username = postgres; password = postgres; Database = postgres";
+        private readonly string connect_string = "Host = localhost; Username = postgres; password = postgres; Database = lab6";
 
         public FormPresentantion()
         {
@@ -19,24 +19,44 @@ namespace lab6
         {
             data_grid_view.Rows.Clear();
             data_grid_view.Columns.Clear();
-            data_grid_view.Columns.Add("actor_name", "actor_name");
-            data_grid_view.Columns.Add("film_name", "film_name");
-            data_grid_view.Columns.Add("honorarium", "honorarium");
+            data_grid_view.Columns.Add(new DataGridViewColumn
+            {
+                Name = "id_cinema",
+                Visible = false
+            });
+            data_grid_view.Columns.Add("cinema_name", "cinema_name");
+            data_grid_view.Columns.Add("locate", "locate");
+            data_grid_view.Columns.Add(new DataGridViewCheckBoxColumn
+            {
+                Name = "is_parking",
+                ValueType = Type.GetType("bool"),
+                TrueValue = true,
+                FalseValue = true,
+            });
+            data_grid_view.Columns.Add(new DataGridViewColumn
+            {
+                Name = "id_hall",
+                Visible = false
+            });
+            data_grid_view.Columns.Add("hall_name", "hall_name");
+            data_grid_view.Columns.Add("capacity", "capacity");
+            data_grid_view.Columns.Add("area", "area");
+
             using (var connect = new NpgsqlConnection(connect_string))
             {
                 connect.Open();
                 var sCommand = new NpgsqlCommand
                 {
                     Connection = connect,
-                    CommandText = @"SELECT * from view_cinema"
+                    CommandText = @"select * from cinemas inner join halls h on cinemas.id_hall = h.id_hall"
                 };
                 var reader = sCommand.ExecuteReader();
                 while (reader.Read())
-                    data_grid_view.Rows.Add(reader["actor_name"], reader["film_name"], reader["honorarium"]); //fill data_grid_view
+                    data_grid_view.Rows.Add(reader["id"], reader["cinema_name"], reader["locate"], reader["is_parking"], reader["hall_name"], reader["capacity"], reader["area"]); //fill data_grid_view
             }
             foreach (DataGridViewRow row in data_grid_view.Rows)
             {
-                if (row.Cells[0].Value != null && row.Cells[1].Value != null && row.Cells[2].Value != null)
+                if (row.Tag != null)
                 {
                     var tag = new List<object>();
                     foreach (DataGridViewCell cell in row.Cells)
@@ -49,6 +69,7 @@ namespace lab6
         private void data_grid_view_RowValidating(object sender, DataGridViewCellCancelEventArgs e)
         {
             var row = data_grid_view.Rows[e.RowIndex];
+            
             if (data_grid_view.IsCurrentRowDirty)
             {
                 foreach (DataGridViewCell cell in data_grid_view.Rows[e.RowIndex].Cells)
@@ -59,21 +80,29 @@ namespace lab6
                 {
                     using var connect = new NpgsqlConnection(connect_string);
                     connect.Open();
-                    using var command = new NpgsqlCommand() { Connection = connect };
-                    command.Parameters.AddWithValue("@actor_name", row.Cells["actor_name"].Value);
-                    command.Parameters.AddWithValue("@film_name", row.Cells["film_name"].Value);
-                    command.Parameters.AddWithValue("@honorarium", int.Parse(row.Cells["honorarium"].Value.ToString()));
+                    using var command_for_cinema = new NpgsqlCommand() { Connection = connect };
+                    command_for_cinema.Parameters.AddWithValue("@id_cinema", NpgsqlTypes.NpgsqlDbType.Integer, int.Parse(row.Cells["id_cinema"].Value.ToString()));
+                    command_for_cinema.Parameters.AddWithValue("@cinema_name", row.Cells["cinema_name"].Value);
+                    command_for_cinema.Parameters.AddWithValue("@locate", row.Cells["locate"].Value);
+                    command_for_cinema.Parameters.AddWithValue("@is_parking", bool.Parse(row.Cells["locate"].Value.ToString()));
+                    using var command_for_hall = new NpgsqlCommand() { Connection = connect };
+                    command_for_hall.Parameters.AddWithValue("@id_hall", int.Parse(row.Cells["id_hall"].Value.ToString()));
+                    command_for_hall.Parameters.AddWithValue("@hall_name", row.Cells["hall_name"].Value);
+                    command_for_hall.Parameters.AddWithValue("@capacity", int.Parse(row.Cells["capacity"].Value.ToString()));
+                    command_for_hall.Parameters.AddWithValue("@area", int.Parse(row.Cells["area"].Value.ToString()));
                     if (row.Tag != null) //if a tag of the mutable row is null, then this row is new
                     {
 
-                        command.CommandText = @"UPDATE view_cinema SET actor_name = @actor_name, film_name = @film_name, honorarium = @honorarium
-                                                        where actor_name = @old_actor_name and film_name = @old_film_name";
-                        command.Parameters.AddWithValue("@old_actor_name", ((List<object>)row.Tag)[0]);
-                        command.Parameters.AddWithValue("@old_film_name", ((List<object>)row.Tag)[1]);
+                        command_for_cinema.CommandText = @"UPDATE cinemas SET cinema_name = @cinema_name, locate = @locate, is_parking = @is_parking
+                                                        where id_cinema = @id_cinema";
+
+                        command_for_hall.CommandText = @"update halls set hall_name = @hall_name, capacity = @capacity, area = @area
+                                                 where id_hall = @id_hall";
                     }
                     else
                     {
-                        command.CommandText = @"INSERT INTO view_cinema(actor_name, film_name, honorarium) VALUES (@actor_name, @film_name, @honorarium)";
+                        command_for_cinema.CommandText = @"insert into cinemas(cinema_name, locate, id_hall) VALUES (@cinema_name, @locate, @is_parking)";
+                        command_for_hall.CommandText = @"INSERT INTO view_cinema(actor_name, film_name, honorarium) VALUES (@actor_name, @film_name, @honorarium)";
                     }
                     int check = CheckDuplicates(row.Cells["actor_name"].Value.ToString(), row.Cells["film_name"].Value.ToString(), row.Index); //if there is the row in data_grid, then the function return index second row, else return -1 
                     if (check >= 0) //if there is duplicates
@@ -81,7 +110,7 @@ namespace lab6
                         data_grid_view.Rows[check].Cells["honorarium"].Value = int.Parse(data_grid_view.Rows[check].Cells["honorarium"].Value.ToString()) + int.Parse(row.Cells["honorarium"].Value.ToString()); //update honorarium
                         row.SetValues(string.Empty, string.Empty, string.Empty); //erase the values
                     }
-                    command.ExecuteNonQuery();
+                    command_for_cinema.ExecuteNonQuery();
                     connect.Close();
                     var dataDict = new List<object>();
                     foreach (var columnsName in new[] { "actor_name", "film_name", "honorarium" })

@@ -41,14 +41,14 @@
             this.data_grid_view.Name = "data_grid_view";
             this.data_grid_view.RowHeadersWidth = 51;
             this.data_grid_view.RowTemplate.Height = 24;
-            this.data_grid_view.Size = new System.Drawing.Size(494, 431);
+            this.data_grid_view.Size = new System.Drawing.Size(824, 504);
             this.data_grid_view.TabIndex = 0;
             this.data_grid_view.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.data_grid_view_CellEndEdit);
             this.data_grid_view.RowValidating += new System.Windows.Forms.DataGridViewCellCancelEventHandler(this.data_grid_view_RowValidating);
             // 
             // button_delete
             // 
-            this.button_delete.Location = new System.Drawing.Point(512, 7);
+            this.button_delete.Location = new System.Drawing.Point(842, 12);
             this.button_delete.Name = "button_delete";
             this.button_delete.Size = new System.Drawing.Size(276, 41);
             this.button_delete.TabIndex = 5;
@@ -58,7 +58,7 @@
             // 
             // button_refresh
             // 
-            this.button_refresh.Location = new System.Drawing.Point(512, 54);
+            this.button_refresh.Location = new System.Drawing.Point(842, 59);
             this.button_refresh.Name = "button_refresh";
             this.button_refresh.Size = new System.Drawing.Size(276, 53);
             this.button_refresh.TabIndex = 6;
@@ -71,7 +71,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(1130, 599);
             this.Controls.Add(this.button_refresh);
             this.Controls.Add(this.button_delete);
             this.Controls.Add(this.data_grid_view);
