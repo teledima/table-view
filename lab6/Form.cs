@@ -17,11 +17,53 @@ namespace lab6
         }
         private void InitializePresentation()
         {
+            var sex = new DataGridViewComboBoxColumn()
+            {
+                Name = "sex",
+                ReadOnly = false,
+            };
+            sex.Items.Add("man");
+            sex.Items.Add("women");
+
             data_grid_view.Rows.Clear();
             data_grid_view.Columns.Clear();
-            data_grid_view.Columns.Add("actor_name", "actor_name");
-            data_grid_view.Columns.Add("film_name", "film_name");
-            data_grid_view.Columns.Add("honorarium", "honorarium");
+            data_grid_view.Columns.Add(new DataGridViewTextBoxColumn()
+            {
+                Name = "actor_name",
+                HeaderText = "actor_name",
+                ValueType = typeof(string)
+            });
+            data_grid_view.Columns.Add(new DataGridViewTextBoxColumn()
+            {
+                Name = "age",
+                HeaderText = "age",
+                ValueType = typeof(int)
+            });
+            data_grid_view.Columns.Add(sex);
+            data_grid_view.Columns.Add(new DataGridViewTextBoxColumn()
+            { 
+                Name = "film_name",
+                HeaderText = "film_name",
+                ValueType = typeof(string)
+            });
+            data_grid_view.Columns.Add(new DataGridViewTextBoxColumn()
+            {
+                Name = "running_time",
+                HeaderText = "running_type",
+                ValueType = typeof(int)
+            });
+            data_grid_view.Columns.Add(new DataGridViewTextBoxColumn()
+            {
+                Name = "budget",
+                HeaderText = "budget",
+                ValueType = typeof(int)
+            });
+            data_grid_view.Columns.Add(new DataGridViewTextBoxColumn()
+            {
+                Name = "honorarium",
+                HeaderText = "honorarium",
+                ValueType = typeof(int)
+            });
             using (var connect = new NpgsqlConnection(connect_string))
             {
                 connect.Open();
@@ -32,17 +74,16 @@ namespace lab6
                 };
                 var reader = sCommand.ExecuteReader();
                 while (reader.Read())
-                    data_grid_view.Rows.Add(reader["actor_name"], reader["film_name"], reader["honorarium"]); //fill data_grid_view
+                    data_grid_view.Rows.Add(reader["actor_name"], reader["age"], reader["sex"], reader["film_name"], reader["running_time"], reader["budget"], reader["honorarium"]); //fill data_grid_view
             }
             foreach (DataGridViewRow row in data_grid_view.Rows)
             {
-                if (row.Cells[0].Value != null && row.Cells[1].Value != null && row.Cells[2].Value != null)
-                {
-                    var tag = new List<object>();
-                    foreach (DataGridViewCell cell in row.Cells)
-                        tag.Add(cell.Value);
-                    row.Tag = tag;
-                } //assign a tag for each added row equal his values
+                var tag = new List<object>();
+                foreach (DataGridViewCell cell in row.Cells)
+                    tag.Add(cell.Value);
+                 row.Tag = tag;
+                if (row.IsNewRow) row.Tag = null;
+                //assign a tag for each added row equal his values
             }
         }
 
@@ -51,29 +92,29 @@ namespace lab6
             var row = data_grid_view.Rows[e.RowIndex];
             if (data_grid_view.IsCurrentRowDirty)
             {
-                foreach (DataGridViewCell cell in data_grid_view.Rows[e.RowIndex].Cells)
-                {
-                    if (cell.Value is null) return;
-                }
                 if (!e.Cancel)
                 {
                     using var connect = new NpgsqlConnection(connect_string);
                     connect.Open();
                     using var command = new NpgsqlCommand() { Connection = connect };
                     command.Parameters.AddWithValue("@actor_name", row.Cells["actor_name"].Value);
+                    command.Parameters.AddWithValue("@age", row.Cells["age"].Value);
+                    command.Parameters.AddWithValue("@sex", row.Cells["sex"].Value);
                     command.Parameters.AddWithValue("@film_name", row.Cells["film_name"].Value);
+                    command.Parameters.AddWithValue("@running_time", row.Cells["running_time"].Value);
+                    command.Parameters.AddWithValue("@budget", row.Cells["budget"].Value);
                     command.Parameters.AddWithValue("@honorarium", int.Parse(row.Cells["honorarium"].Value.ToString()));
                     if (row.Tag != null) //if a tag of the mutable row is null, then this row is new
                     {
 
-                        command.CommandText = @"UPDATE view_cinema SET actor_name = @actor_name, film_name = @film_name, honorarium = @honorarium
-                                                        where actor_name = @old_actor_name and film_name = @old_film_name";
+                        command.CommandText = @"update view_cinema set actor_name = @actor_name, age=@age, sex=@sex, film_name=@film_name, running_time=@running_time, budget=@budget, honorarium=@honorarium
+                                                where actor_name = @old_actor_name and film_name = @old_film_name";
                         command.Parameters.AddWithValue("@old_actor_name", ((List<object>)row.Tag)[0]);
-                        command.Parameters.AddWithValue("@old_film_name", ((List<object>)row.Tag)[1]);
+                        command.Parameters.AddWithValue("@old_film_name", ((List<object>)row.Tag)[3]);
                     }
                     else
                     {
-                        command.CommandText = @"INSERT INTO view_cinema(actor_name, film_name, honorarium) VALUES (@actor_name, @film_name, @honorarium)";
+                        command.CommandText = @"insert into view_cinema(actor_name, age, sex, film_name, running_time, budget) VALUES (@actor_name, @age, @sex, @film_name, @running_time, @budget)";
                     }
                     int check = CheckDuplicates(row.Cells["actor_name"].Value.ToString(), row.Cells["film_name"].Value.ToString(), row.Index); //if there is the row in data_grid, then the function return index second row, else return -1 
                     if (check >= 0) //if there is duplicates
@@ -83,13 +124,15 @@ namespace lab6
                     }
                     command.ExecuteNonQuery();
                     connect.Close();
-                    var dataDict = new List<object>();
-                    foreach (var columnsName in new[] { "actor_name", "film_name", "honorarium" })
+                    foreach (DataGridViewRow row_t in data_grid_view.Rows)
                     {
-                        dataDict.Add(row.Cells[columnsName].Value);
+                        var tag = new List<object>();
+                        foreach (DataGridViewCell cell in row_t.Cells)
+                            tag.Add(cell.Value);
+                        row_t.Tag = tag;
+                        if (row_t.IsNewRow) row_t.Tag = null;
+                        //assign a tag for each added row equal his values
                     }
-
-                    row.Tag = dataDict; //change a tag this row 
 
                     row.ErrorText = string.Empty; //clear error text
                 }
