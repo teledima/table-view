@@ -167,61 +167,6 @@ namespace lab6
             data_grid_view.Rows.Remove(row);
         }
 
-        private void data_grid_view_CellEndEdit(object sender, DataGridViewCellEventArgs e)
-        {
-            var cell = data_grid_view[e.ColumnIndex, e.RowIndex];
-            var value = cell.Value?.ToString();
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                if (e.ColumnIndex == 0)
-                    cell.ErrorText = "Имя не может быть пустым";
-                else if (e.ColumnIndex == 1)
-                    cell.ErrorText = "Название фильма не может быть пустым";
-            }
-            else if (cell.ColumnIndex == 2)
-            {
-                if (int.TryParse(cell.Value.ToString(), out _))
-                {
-                    if (int.Parse(value) <= 0)
-                    {
-                        cell.ErrorText = "Гонорар не может быть отрицательным или нулевым";
-                    }
-                }
-                else
-                {
-                    cell.ErrorText = "Гонорар не должен содержать символы, отличные от цифр";
-                }
-            }
-            else
-            {
-                cell.ErrorText = string.Empty;
-            }
-            RewriteRowErrorText(e.RowIndex);
-        }
-        private void RewriteRowErrorText(int row_index)
-        {
-            var row = data_grid_view.Rows[row_index];
-            List<string> error_columns = new List<string>();
-            foreach (DataGridViewCell cell in row.Cells)
-                if (cell.Value is null)
-                    error_columns.Add(cell.OwningColumn.HeaderText);
-            if (error_columns.Count > 0)
-            {
-                var builder = new StringBuilder("Данные в столбце/столбцах ");
-                foreach (string error_column in error_columns)
-                    builder.Append(error_column + " ");
-                builder.Append(" не могут быть пустыми");
-                row.ErrorText = builder.ToString();
-            }
-            else
-            {
-                if (data_grid_view.IsCurrentRowDirty)
-                    row.ErrorText = "Эта строка не зафиксирована";
-                else
-                    row.ErrorText = string.Empty;
-            }
-        }
-
         private int CheckDuplicates(string actor_name, string film_name, int index_no_check)
         {
             foreach (DataGridViewRow row in data_grid_view.Rows)
