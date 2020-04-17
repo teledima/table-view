@@ -30,7 +30,6 @@
         {
             this.data_grid_view = new System.Windows.Forms.DataGridView();
             this.button_delete = new System.Windows.Forms.Button();
-            this.button_refresh = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.data_grid_view)).BeginInit();
             this.SuspendLayout();
             // 
@@ -41,30 +40,20 @@
             this.data_grid_view.Name = "data_grid_view";
             this.data_grid_view.RowHeadersWidth = 51;
             this.data_grid_view.RowTemplate.Height = 24;
-            this.data_grid_view.Size = new System.Drawing.Size(824, 504);
+            this.data_grid_view.Size = new System.Drawing.Size(923, 504);
             this.data_grid_view.TabIndex = 0;
             this.data_grid_view.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.data_grid_view_CellEndEdit);
             this.data_grid_view.RowValidating += new System.Windows.Forms.DataGridViewCellCancelEventHandler(this.data_grid_view_RowValidating);
             // 
             // button_delete
             // 
-            this.button_delete.Location = new System.Drawing.Point(842, 12);
+            this.button_delete.Location = new System.Drawing.Point(12, 517);
             this.button_delete.Name = "button_delete";
-            this.button_delete.Size = new System.Drawing.Size(276, 41);
+            this.button_delete.Size = new System.Drawing.Size(290, 53);
             this.button_delete.TabIndex = 5;
             this.button_delete.Text = "Delete";
             this.button_delete.UseVisualStyleBackColor = true;
             this.button_delete.Click += new System.EventHandler(this.button_delete_Click);
-            // 
-            // button_refresh
-            // 
-            this.button_refresh.Location = new System.Drawing.Point(842, 59);
-            this.button_refresh.Name = "button_refresh";
-            this.button_refresh.Size = new System.Drawing.Size(276, 53);
-            this.button_refresh.TabIndex = 6;
-            this.button_refresh.Text = "Refresh";
-            this.button_refresh.UseVisualStyleBackColor = true;
-            this.button_refresh.Click += new System.EventHandler(this.button_refresh_Click);
             // 
             // FormPresentantion
             // 
@@ -72,7 +61,6 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
             this.ClientSize = new System.Drawing.Size(1130, 599);
-            this.Controls.Add(this.button_refresh);
             this.Controls.Add(this.button_delete);
             this.Controls.Add(this.data_grid_view);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
@@ -87,7 +75,6 @@
 
         private System.Windows.Forms.DataGridView data_grid_view;
         private System.Windows.Forms.Button button_delete;
-        private System.Windows.Forms.Button button_refresh;
     }
 }
 
