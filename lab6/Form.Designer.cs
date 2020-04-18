@@ -42,6 +42,8 @@
             this.data_grid_view.RowTemplate.Height = 24;
             this.data_grid_view.Size = new System.Drawing.Size(923, 504);
             this.data_grid_view.TabIndex = 0;
+            this.data_grid_view.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.data_grid_view_CellEndEdit);
+            this.data_grid_view.DataError += new System.Windows.Forms.DataGridViewDataErrorEventHandler(this.data_grid_view_DataError);
             this.data_grid_view.RowValidating += new System.Windows.Forms.DataGridViewCellCancelEventHandler(this.data_grid_view_RowValidating);
             // 
             // button_delete
