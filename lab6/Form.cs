@@ -13,7 +13,6 @@ namespace lab6
     public partial class FormPresentantion : Form
     {
         private readonly string connect_string = "Host = localhost; Username = postgres; password = postgres; Database = lab6";
-
         public FormPresentantion()
         {
             InitializeComponent();
@@ -29,33 +28,33 @@ namespace lab6
                 data_grid_view.Columns.Add(new DataGridViewTextBoxColumn
                 {
                     Name = "id_question",
-                    ValueType = typeof(int),
+                    ValueType = typeof(uint),
                     Visible = false
                 });
                 data_grid_view.Columns.Add(new DataGridViewTextBoxColumn
                 {
                     Name = "link_id",
                     HeaderText = "link_id",
-                    ValueType = typeof(int)
+                    ValueType = typeof(uint)
                 });
                 data_grid_view.Columns.Add(new DataGridViewTextBoxColumn
                 {
                     Name = "count_view",
                     HeaderText = "count_view",
-                    ValueType = typeof(int),
+                    ValueType = typeof(uint),
                 });
                 data_grid_view.Columns.Add(new DataGridViewTextBoxColumn
                 {
                     Name = "count_like",
                     HeaderText = "count_like",
-                    ValueType = typeof(int),
+                    ValueType = typeof(uint),
                 });
                 data_grid_view.Columns.Add(new DataGridViewTextBoxColumn
                 {
                     Name = "user_id",
                     HeaderText = "id_user",
                     Visible = false,
-                    ValueType = typeof(int)
+                    ValueType = typeof(uint)
                 });
                 data_grid_view.Columns.Add(new DataGridViewTextBoxColumn
                 {
@@ -67,14 +66,14 @@ namespace lab6
                 {
                     Name = "age",
                     HeaderText = "age",
-                    ValueType = typeof(int)
+                    ValueType = typeof(uint)
                 });
                 data_grid_view.Columns.Add(new DataGridViewTextBoxColumn
                 {
                     Name = "status_id",
                     HeaderText = "status_id",
                     Visible = false,
-                    ValueType = typeof(int)
+                    ValueType = typeof(uint)
                 });
                 data_grid_view.Columns.Add(new DataGridViewComboBoxColumn
                 {
@@ -316,8 +315,21 @@ namespace lab6
 
         private void data_grid_view_DataError(object sender, DataGridViewDataErrorEventArgs e)
         {
-            MessageBox.Show("Поле имеет неверный тип", "Информация", MessageBoxButtons.OK, MessageBoxIcon.Error);
-           
+            if ((e.Context & DataGridViewDataErrorContexts.LeaveControl) != 0)
+            {
+                e.Cancel = false;
+                e.ThrowException = false;
+            }
+            else if ((e.Context & DataGridViewDataErrorContexts.Parsing) != 0)
+            {
+                if (int.TryParse(data_grid_view.Rows[e.RowIndex].Cells[e.ColumnIndex].EditedFormattedValue.ToString(), out int result))
+                {
+                    if (result < 0)
+                        MessageBox.Show("Значение не может быть отрицательным", "Информация", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                else
+                    MessageBox.Show("Некорректное значение", "Информация", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }
