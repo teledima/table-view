@@ -139,14 +139,14 @@ namespace lab6
                     int? id_user = (int?)command_check.ExecuteScalar();
 
                     using var command_user = new NpgsqlCommand() { Connection = connect };
-                    command_user.Parameters.AddWithValue("@age", row.Cells["age"].Value ?? DBNull.Value);
-                    command_user.Parameters.AddWithValue("@status_id", id_status);
+                    command_user.Parameters.AddWithValue("@age", NpgsqlDbType.Unknown, row.Cells["age"].Value ?? DBNull.Value);
+                    command_user.Parameters.AddWithValue("@status_id", NpgsqlDbType.Unknown, id_status);
                     command_user.Parameters.AddWithValue("@login", row.Cells["login"].Value);
 
                     using var command_for_questions = new NpgsqlCommand() { Connection = connect };
-                    command_for_questions.Parameters.AddWithValue("@link_id", row.Cells["link_id"].Value ?? DBNull.Value);
-                    command_for_questions.Parameters.AddWithValue("@count_view", row.Cells["count_view"].Value ?? DBNull.Value);
-                    command_for_questions.Parameters.AddWithValue("@count_like", row.Cells["count_like"].Value ?? DBNull.Value);
+                    command_for_questions.Parameters.AddWithValue("@link_id", NpgsqlDbType.Unknown,row.Cells["link_id"].Value ?? DBNull.Value);
+                    command_for_questions.Parameters.AddWithValue("@count_view", NpgsqlDbType.Unknown, row.Cells["count_view"].Value ?? DBNull.Value);
+                    command_for_questions.Parameters.AddWithValue("@count_like", NpgsqlDbType.Unknown, row.Cells["count_like"].Value ?? DBNull.Value);
 
                     if (row.Tag != null) //if a tag of the mutable row is null, then this row is new
                     {
@@ -164,13 +164,13 @@ namespace lab6
                         row.Cells["status_id"].Value = id_status;
                     }
                     connect.Close();
-                    var dataDict = new List<object>();
-                    foreach (DataGridViewColumn column in data_grid_view.Columns)
-                    {
-                        dataDict.Add(row.Cells[column.Name].Value);
-                    }
 
-                    row.Tag = dataDict; //change a tag this row 
+                    var list = new List<object>();
+                    foreach (DataGridViewCell cell in row.Cells)
+                    {
+                        list.Add(cell.Value);
+                    }
+                    row.Tag = list; //change a tag this row 
 
                     row.ErrorText = string.Empty; //clear error text
                     row.Cells["age"].ReadOnly = false;
@@ -189,7 +189,7 @@ namespace lab6
         private int func_insert_question(NpgsqlCommand command_for_questions, int? id_user)
         {
             command_for_questions.CommandText = @"insert into questions(link_id, count_view, count_like, user_id) values (@link_id, @count_view, @count_like, @id_user) returning id_question";
-            command_for_questions.Parameters.AddWithValue("@id_user", id_user);
+            command_for_questions.Parameters.AddWithValue("@id_user", NpgsqlDbType.Unknown, id_user);
             return (int)command_for_questions.ExecuteScalar();
         }
 
@@ -209,8 +209,8 @@ namespace lab6
 
             using var command_update_questions = new NpgsqlCommand() { Connection = connection };
             command_update_questions.CommandText = "update questions set user_id = @user_id where  id_question = @id_question";
-            command_update_questions.Parameters.AddWithValue("@user_id", id_user);
-            command_update_questions.Parameters.AddWithValue("@id_question", id_question);
+            command_update_questions.Parameters.AddWithValue("@user_id", NpgsqlDbType.Unknown, id_user);
+            command_update_questions.Parameters.AddWithValue("@id_question", NpgsqlDbType.Unknown, id_question);
             command_update_questions.ExecuteNonQuery();
         }
 
@@ -218,7 +218,7 @@ namespace lab6
         {
             command_for_questions.CommandText = @"update questions set link_id = @link_id, count_view = @count_view, count_like = @count_like
                                                         where id_question = @id_question";
-            command_for_questions.Parameters.AddWithValue("@id_question", id_question);
+            command_for_questions.Parameters.AddWithValue("@id_question", NpgsqlDbType.Unknown, id_question);
             command_for_questions.ExecuteNonQuery();
         }
 
@@ -260,6 +260,11 @@ namespace lab6
         private void delete_one_row(DataGridViewRow row)
         {
             if (row.IsNewRow) return;
+            if (row.Cells["id_question"].Value == null)
+            {
+                data_grid_view.Rows.Remove(row);
+                return;
+            }
             using var connect = new NpgsqlConnection(connect_string);
             connect.Open();
             using var command_delete = new NpgsqlCommand("delete from questions where id_question = @id_question and user_id = @user_id", connect);

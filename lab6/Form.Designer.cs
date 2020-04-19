@@ -40,7 +40,7 @@
             this.data_grid_view.Name = "data_grid_view";
             this.data_grid_view.RowHeadersWidth = 51;
             this.data_grid_view.RowTemplate.Height = 24;
-            this.data_grid_view.Size = new System.Drawing.Size(923, 504);
+            this.data_grid_view.Size = new System.Drawing.Size(876, 305);
             this.data_grid_view.TabIndex = 0;
             this.data_grid_view.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.data_grid_view_CellEndEdit);
             this.data_grid_view.DataError += new System.Windows.Forms.DataGridViewDataErrorEventHandler(this.data_grid_view_DataError);
@@ -48,7 +48,7 @@
             // 
             // button_delete
             // 
-            this.button_delete.Location = new System.Drawing.Point(12, 517);
+            this.button_delete.Location = new System.Drawing.Point(12, 318);
             this.button_delete.Name = "button_delete";
             this.button_delete.Size = new System.Drawing.Size(290, 53);
             this.button_delete.TabIndex = 5;
@@ -61,7 +61,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
-            this.ClientSize = new System.Drawing.Size(1130, 599);
+            this.ClientSize = new System.Drawing.Size(904, 394);
             this.Controls.Add(this.button_delete);
             this.Controls.Add(this.data_grid_view);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
