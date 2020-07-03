@@ -29,13 +29,16 @@
         private void InitializeComponent()
         {
             this.data_grid_view = new System.Windows.Forms.DataGridView();
-            this.button_delete = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.data_grid_view)).BeginInit();
             this.SuspendLayout();
             // 
             // data_grid_view
             // 
-            this.data_grid_view.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.data_grid_view.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.data_grid_view.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
+            this.data_grid_view.ColumnHeadersHeight = 29;
             this.data_grid_view.Location = new System.Drawing.Point(12, 7);
             this.data_grid_view.Name = "data_grid_view";
             this.data_grid_view.RowHeadersWidth = 51;
@@ -43,30 +46,19 @@
             this.data_grid_view.Size = new System.Drawing.Size(876, 305);
             this.data_grid_view.TabIndex = 0;
             this.data_grid_view.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.data_grid_view_CellEndEdit);
-            this.data_grid_view.DataError += new System.Windows.Forms.DataGridViewDataErrorEventHandler(this.data_grid_view_DataError);
             this.data_grid_view.RowValidating += new System.Windows.Forms.DataGridViewCellCancelEventHandler(this.data_grid_view_RowValidating);
-            // 
-            // button_delete
-            // 
-            this.button_delete.Location = new System.Drawing.Point(12, 318);
-            this.button_delete.Name = "button_delete";
-            this.button_delete.Size = new System.Drawing.Size(290, 53);
-            this.button_delete.TabIndex = 5;
-            this.button_delete.Text = "Delete";
-            this.button_delete.UseVisualStyleBackColor = true;
-            this.button_delete.Click += new System.EventHandler(this.button_delete_Click);
+            this.data_grid_view.UserDeletingRow += new System.Windows.Forms.DataGridViewRowCancelEventHandler(this.data_grid_view_UserDeletingRow);
             // 
             // FormPresentantion
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.AutoSize = true;
-            this.ClientSize = new System.Drawing.Size(904, 394);
-            this.Controls.Add(this.button_delete);
+            this.ClientSize = new System.Drawing.Size(904, 336);
             this.Controls.Add(this.data_grid_view);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.MinimumSize = new System.Drawing.Size(600, 200);
             this.Name = "FormPresentantion";
-            this.Text = "FormDgvIud";
+            this.ShowIcon = false;
+            this.Text = "Табличное представление";
             ((System.ComponentModel.ISupportInitialize)(this.data_grid_view)).EndInit();
             this.ResumeLayout(false);
 
@@ -75,7 +67,6 @@
         #endregion
 
         private System.Windows.Forms.DataGridView data_grid_view;
-        private System.Windows.Forms.Button button_delete;
     }
 }
 

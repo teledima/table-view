@@ -1,18 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Drawing;
-using System.Text;
+using System.Linq;
 using System.Windows.Forms;
+using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using NpgsqlTypes;
-using System.Data.SqlClient; // Sql Server Connection Namespace
 
 namespace lab6
 {
     public partial class FormPresentantion : Form
     {
-        private readonly string connect_string = "Host = localhost; Username = postgres; password = postgres; Database = lab6";
+        private Brainly_info db = new Brainly_info();
         public FormPresentantion()
         {
             InitializeComponent();
@@ -20,41 +19,50 @@ namespace lab6
         }
         private void InitializePresentation()
         {
+            List<subjects> subjects = db.subjects.ToList();
             data_grid_view.Rows.Clear();
             data_grid_view.Columns.Clear();
-            DataTable data = new DataTable();
-            status_load(data);
             {
                 data_grid_view.Columns.Add(new DataGridViewTextBoxColumn
                 {
                     Name = "id_question",
-                    ValueType = typeof(uint),
+                    ValueType = typeof(int),
                     Visible = false
                 });
                 data_grid_view.Columns.Add(new DataGridViewTextBoxColumn
                 {
                     Name = "link_id",
                     HeaderText = "link_id",
-                    ValueType = typeof(uint)
+                    ValueType = typeof(int)
                 });
                 data_grid_view.Columns.Add(new DataGridViewTextBoxColumn
                 {
                     Name = "count_view",
                     HeaderText = "count_view",
-                    ValueType = typeof(uint),
+                    ValueType = typeof(int),
                 });
                 data_grid_view.Columns.Add(new DataGridViewTextBoxColumn
                 {
-                    Name = "count_like",
-                    HeaderText = "count_like",
-                    ValueType = typeof(uint),
+                    Name = "subject_id",
+                    HeaderText = "subject_id",
+                    Visible = false,
+                    ValueType = typeof(int)
+                });
+                data_grid_view.Columns.Add(new DataGridViewComboBoxColumn
+                {
+                    Name = "subject",
+                    HeaderText = "subject",
+                    ValueType = typeof(string),
+                    DataSource = db.subjects.ToList(),
+                    Width = 150,
+                    DisplayMember = "name"
                 });
                 data_grid_view.Columns.Add(new DataGridViewTextBoxColumn
                 {
                     Name = "user_id",
                     HeaderText = "id_user",
                     Visible = false,
-                    ValueType = typeof(uint)
+                    ValueType = typeof(int)
                 });
                 data_grid_view.Columns.Add(new DataGridViewTextBoxColumn
                 {
@@ -66,38 +74,32 @@ namespace lab6
                 {
                     Name = "age",
                     HeaderText = "age",
-                    ValueType = typeof(uint)
+                    ValueType = typeof(int)
                 });
                 data_grid_view.Columns.Add(new DataGridViewTextBoxColumn
                 {
                     Name = "status_id",
                     HeaderText = "status_id",
                     Visible = false,
-                    ValueType = typeof(uint)
+                    ValueType = typeof(int)
                 });
                 data_grid_view.Columns.Add(new DataGridViewComboBoxColumn
                 {
                     Name = "status",
                     HeaderText = "status",
                     ValueType = typeof(string),
-                    DataSource = data,
+                    DataSource = db.statuses.ToList(),
+                    Width = 150,
                     DisplayMember = "name"
                 });
             }
-            using (var connect = new NpgsqlConnection(connect_string))
-            {
-                connect.Open();
-                var sCommand = new NpgsqlCommand
-                {
-                    Connection = connect,
-                    CommandText = @"select * from questions inner join users u on questions.user_id = u.id_user inner join statuses s on u.status_id = s.id_status;"
-                };
-                var reader = sCommand.ExecuteReader();
-                while (reader.Read())
-                {
-                    data_grid_view.Rows.Add(reader["id_question"], reader["link_id"], reader["count_view"], reader["count_like"], reader["user_id"], reader["login"], reader["age"], reader["status_id"],
-                        reader["name"]); //fill data_grid_view
-                }
+
+            foreach (questions question in db.questions.Include("users"))
+            {   
+                    data_grid_view.Rows.Add(question.id_question, question.link_id, question.count_view,
+                        question.subjects.id, question.subjects.name,
+                        question.users.id_user, question.users.login, question.users.age,
+                        question.users.statuses.id_status, question.users.statuses.name);
             }
             foreach (DataGridViewRow row in data_grid_view.Rows)
             {
@@ -114,56 +116,43 @@ namespace lab6
         private void data_grid_view_RowValidating(object sender, DataGridViewCellCancelEventArgs e)
         {
             var row = data_grid_view.Rows[e.RowIndex];
-
             if (data_grid_view.IsCurrentRowDirty)
             {
+                if (row.Cells["status"].Value == null) row.Cells["status"].Value = "Hide";
+                if (row.Cells["count_view"].Value == null || row.Cells["count_view"].Value is DBNull) row.Cells["count_view"].Value = 0;
+                if (row.Cells["login"].Value == null || row.Cells["subject"].Value == null || row.Cells["age"].Value == null || row.Cells["age"].Value is DBNull || row.Cells["link_id"].Value == null || row.Cells["link_id"].Value is DBNull ||
+                    (int)row.Cells["age"].Value < 0 || (int)row.Cells["link_id"].Value < 0)
+                {
+                    e.Cancel = true;
+                    if (MessageBox.Show("Введены некорректные данные \n\nВернуть предыдущие значения?", "Error", MessageBoxButtons.YesNo, MessageBoxIcon.Error) == DialogResult.Yes)
+                    {
+                        row.Cells["link_id"].Value = ((List<object>)row.Tag)[1];
+                        row.Cells["subject"].Value = ((List<object>)row.Tag)[4];
+                        row.Cells["login"].Value = ((List<object>)row.Tag)[6];
+                        row.Cells["age"].Value = ((List<object>)row.Tag)[7];
+                    }
+                }
                 if (!e.Cancel)
                 {
-                    if (row.Cells["login"].Value == null)
+                    statuses status = db.statuses.Where(status => status.name == (string)row.Cells["status"].Value).First();
+                    users user = db.users.Where(user => user.login == (string)row.Cells["login"].Value).FirstOrDefault();
+                    questions question = db.questions.Where(question => question.id_question == (int?)row.Cells["id_question"].Value).FirstOrDefault();
+                    subjects subject = db.subjects.Where(subject => subject.name == (string)row.Cells["subject"].Value).First();
+
+                    user = UserSave(user, (string)row.Cells["login"].Value, (int)row.Cells["age"].Value, status.id_status);
+                    question = QuestionSave(question, (int)row.Cells["link_id"].Value, (int)row.Cells["count_view"].Value, subject.id, user.id_user);
+
+                    if (row.Cells["id_question"].Value != null) //if a tag of the mutable row is null, then this row is new
                     {
-                        MessageBox.Show("Заполните обязательное поле login", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
-                    if (row.Cells["status"].Value == null) row.Cells["status"].Value = "Hide";
-                    using var connect = new NpgsqlConnection(connect_string);
-                    connect.Open();
-
-                    using var command_status = new NpgsqlCommand() { Connection = connect };
-                    command_status.CommandText = "select id_status from statuses where name = @name";
-                    command_status.Parameters.AddWithValue("@name", row.Cells["status"].Value);
-                    int id_status = (int)command_status.ExecuteScalar();
-
-                    using var command_check = new NpgsqlCommand() { Connection = connect };
-                    command_check.CommandText = "select id_user from users where login = @login";
-                    command_check.Parameters.AddWithValue("@login", row.Cells["login"].Value.ToString());
-                    int? id_user = (int?)command_check.ExecuteScalar();
-
-                    using var command_user = new NpgsqlCommand() { Connection = connect };
-                    command_user.Parameters.AddWithValue("@age", NpgsqlDbType.Unknown, row.Cells["age"].Value ?? DBNull.Value);
-                    command_user.Parameters.AddWithValue("@status_id", NpgsqlDbType.Unknown, id_status);
-                    command_user.Parameters.AddWithValue("@login", row.Cells["login"].Value);
-
-                    using var command_for_questions = new NpgsqlCommand() { Connection = connect };
-                    command_for_questions.Parameters.AddWithValue("@link_id", NpgsqlDbType.Unknown,row.Cells["link_id"].Value ?? DBNull.Value);
-                    command_for_questions.Parameters.AddWithValue("@count_view", NpgsqlDbType.Unknown, row.Cells["count_view"].Value ?? DBNull.Value);
-                    command_for_questions.Parameters.AddWithValue("@count_like", NpgsqlDbType.Unknown, row.Cells["count_like"].Value ?? DBNull.Value);
-
-                    if (row.Tag != null) //if a tag of the mutable row is null, then this row is new
-                    {
-                        func_update_user(connect, command_user, id_user, ((List<object>)row.Tag)[0]);
-                        func_update_question(command_for_questions, row.Cells["id_question"].Value);
-                        UpdateUserInfoDataGrid(row, id_status);
+                        UpdateUserInfoDataGrid(row, status.id_status);
                     }
                     else
                     {
-                        if (id_user == null) id_user = func_insert_user(command_user);
-                        int id_question = func_insert_question(command_for_questions, id_user);
-
-                        row.Cells["id_question"].Value = id_question;
-                        row.Cells["user_id"].Value = id_user;
-                        row.Cells["status_id"].Value = id_status;
+                        row.Cells["id_question"].Value = question.id_question;
+                        row.Cells["id_question"].Value = subject.id;
+                        row.Cells["user_id"].Value = user.id_user;
+                        row.Cells["status_id"].Value = user.statuses.id_status;
                     }
-                    connect.Close();
 
                     var list = new List<object>();
                     foreach (DataGridViewCell cell in row.Cells)
@@ -180,51 +169,38 @@ namespace lab6
             }
         }
 
-        private int? func_insert_user(NpgsqlCommand command_user)
+        private users UserSave(users user, string login, int age, int id_status)
         {
-            command_user.CommandText = @"insert into users(login, age, status_id) values (@login, @age, @status_id) returning id_user";
-            return (int?)command_user.ExecuteScalar();
-        }
-
-        private int func_insert_question(NpgsqlCommand command_for_questions, int? id_user)
-        {
-            command_for_questions.CommandText = @"insert into questions(link_id, count_view, count_like, user_id) values (@link_id, @count_view, @count_like, @id_user) returning id_question";
-            command_for_questions.Parameters.AddWithValue("@id_user", NpgsqlDbType.Unknown, id_user);
-            return (int)command_for_questions.ExecuteScalar();
-        }
-
-        private void func_update_user(NpgsqlConnection connection, NpgsqlCommand command_user, int? id_user, object id_question)
-        {
-            if (id_user == null) //если нового пользователя нету, то мы вставляем его 
-            {
-                command_user.CommandText = "insert into users(login, age, status_id) values (@login, @age, @status_id) returning id_user";
-
-                id_user = (int)command_user.ExecuteScalar();
-            }
+            if (user == null) user = db.Add(
+                new users(login, age, id_status))
+                .Entity;
             else
             {
-                command_user.CommandText = "update users set age = @age, status_id = @status_id where login = @login";
-                command_user.ExecuteNonQuery();
+                user.login = login;
+                user.age = age;
+                user.status_id = id_status;
             }
-
-            using var command_update_questions = new NpgsqlCommand() { Connection = connection };
-            command_update_questions.CommandText = "update questions set user_id = @user_id where  id_question = @id_question";
-            command_update_questions.Parameters.AddWithValue("@user_id", NpgsqlDbType.Unknown, id_user);
-            command_update_questions.Parameters.AddWithValue("@id_question", NpgsqlDbType.Unknown, id_question);
-            command_update_questions.ExecuteNonQuery();
+            return user;
         }
 
-        private void func_update_question(NpgsqlCommand command_for_questions, object id_question)
+        private questions QuestionSave(questions question, int link_id, int count_view, int subject_id, int user_id)
         {
-            command_for_questions.CommandText = @"update questions set link_id = @link_id, count_view = @count_view, count_like = @count_like
-                                                        where id_question = @id_question";
-            command_for_questions.Parameters.AddWithValue("@id_question", NpgsqlDbType.Unknown, id_question);
-            command_for_questions.ExecuteNonQuery();
+            if (question == null)
+                question = db.Add(new questions(link_id, count_view, subject_id, user_id)).Entity;
+            else
+            {
+                question.link_id = link_id;
+                question.count_view = count_view;
+                question.subject_id = subject_id;
+                question.user_id = user_id;
+            }
+            db.SaveChanges();
+            return question;
         }
 
         private void UpdateUserInfoDataGrid(DataGridViewRow row, int id_status)
         {
-            if (row.Cells["login"].Value.ToString() == ((List<object>)row.Tag)[5].ToString())
+            if (row.Cells["login"].Value.ToString() == ((List<object>)row.Tag)[6].ToString())
             {
                 if ((int?)row.Cells["status_id"].Value != id_status) // if status is changed
                 {
@@ -239,7 +215,7 @@ namespace lab6
                     }
                 }
 
-                if (row.Cells["age"].Value.ToString() != ((List<object>)row.Tag)[6].ToString())
+                if (row.Cells["age"].Value.ToString() != ((List<object>)row.Tag)[7].ToString())
                 {
                     foreach (DataGridViewRow row_up in data_grid_view.Rows)
                     {
@@ -252,89 +228,32 @@ namespace lab6
                 }
             }
         }
-        private void button_delete_Click(object sender, EventArgs e)
-        {
-            foreach (DataGridViewRow row in data_grid_view.SelectedRows) //delete selected row
-                delete_one_row(row);
-        }
-        private void delete_one_row(DataGridViewRow row)
-        {
-            if (row.IsNewRow) return;
-            if (row.Cells["id_question"].Value == null)
-            {
-                data_grid_view.Rows.Remove(row);
-                return;
-            }
-            using var connect = new NpgsqlConnection(connect_string);
-            connect.Open();
-            using var command_delete = new NpgsqlCommand("delete from questions where id_question = @id_question and user_id = @user_id", connect);
-            command_delete.Parameters.AddWithValue("@id_question", row.Cells["id_question"].Value);
-            command_delete.Parameters.AddWithValue("@film_name", row.Cells["user_id"].Value);
-            command_delete.ExecuteNonQuery();
-            connect.Close();
-            data_grid_view.Rows.Remove(row);
-        }
-
-        private void status_load(DataTable data)
-        {
-            using var connect = new NpgsqlConnection(connect_string);
-            connect.Open();
-            using var command = new NpgsqlCommand("select name from statuses", connect);
-            data.Load(command.ExecuteReader());
-            connect.Close();
-        }
 
         private void data_grid_view_CellEndEdit(object sender, DataGridViewCellEventArgs e)
         {
-            if (e.ColumnIndex == 5)
+            if (e.ColumnIndex == 6)
             {
-                using var connect = new NpgsqlConnection(connect_string);
-                connect.Open();
-                int? id_user = null;
-                using (var command_check = new NpgsqlCommand() { Connection = connect })
-                {
-                    command_check.CommandText = "select id_user from users where login = @login";
-                    command_check.Parameters.AddWithValue("@login", data_grid_view.Rows[e.RowIndex].Cells[e.ColumnIndex].Value);
-                    id_user = (int?)command_check.ExecuteScalar();
-                }
-                if (id_user == null)
+                users user = db.users.Where(user => user.login == (string)data_grid_view.Rows[e.RowIndex].Cells[e.ColumnIndex].Value).FirstOrDefault();
+                if (user == null)
                 {
                     data_grid_view.Rows[e.RowIndex].Cells["age"].ReadOnly = false;
                     data_grid_view.Rows[e.RowIndex].Cells["status"].ReadOnly = false;
                     return;
                 }
-                using (var command_select_data = new NpgsqlCommand() { Connection = connect })
-                {
-                    command_select_data.CommandText = "select login, age, name from users inner join statuses s on users.status_id = s.id_status where login = @login";
-                    command_select_data.Parameters.AddWithValue("@login", data_grid_view.Rows[e.RowIndex].Cells["login"].Value);
-                    var reader = command_select_data.ExecuteReader();
-                    bool check = reader.Read();
-                    data_grid_view.Rows[e.RowIndex].Cells["age"].Value = reader["age"] ?? null;
-                    data_grid_view.Rows[e.RowIndex].Cells["age"].ReadOnly = true;
-                    data_grid_view.Rows[e.RowIndex].Cells["status"].Value = reader["name"] ?? null;
-                    data_grid_view.Rows[e.RowIndex].Cells["status"].ReadOnly = true;
-                }
-                connect.Close();
+                data_grid_view.Rows[e.RowIndex].Cells["user_id"].Value = user.id_user;
+                data_grid_view.Rows[e.RowIndex].Cells["age"].Value = user.age;
+                data_grid_view.Rows[e.RowIndex].Cells["age"].ReadOnly = true;
+                data_grid_view.Rows[e.RowIndex].Cells["status_id"].Value = user.status_id;
+                data_grid_view.Rows[e.RowIndex].Cells["status"].Value = user.statuses.name;
+                data_grid_view.Rows[e.RowIndex].Cells["status"].ReadOnly = true;
             }
         }
 
-        private void data_grid_view_DataError(object sender, DataGridViewDataErrorEventArgs e)
+        private void data_grid_view_UserDeletingRow(object sender, DataGridViewRowCancelEventArgs e)
         {
-            if ((e.Context & DataGridViewDataErrorContexts.LeaveControl) != 0)
-            {
-                e.Cancel = false;
-                e.ThrowException = false;
-            }
-            else if ((e.Context & DataGridViewDataErrorContexts.Parsing) != 0)
-            {
-                if (int.TryParse(data_grid_view.Rows[e.RowIndex].Cells[e.ColumnIndex].EditedFormattedValue.ToString(), out int result))
-                {
-                    if (result < 0)
-                        MessageBox.Show("Значение не может быть отрицательным", "Информация", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-                else
-                    MessageBox.Show("Некорректное значение", "Информация", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            if (e.Row.IsNewRow || e.Row.Cells["id_question"].Value == null) return;
+            db.questions.Remove(db.questions.Find((int)e.Row.Cells["id_question"].Value));
+            db.SaveChanges();
         }
     }
 }
